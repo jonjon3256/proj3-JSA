@@ -45,7 +45,7 @@
 
   <div class="row">
     <div class="col-xs-6 text-center">
-      <h1>Words</h1>
+      <h1>Word</h1>
     </div>
   </div>
 <!-- Vocabularly words layed out in 6 columns;
@@ -84,32 +84,56 @@
     <label for="attempt">Word:</label>
     <input id="attempt" name="attempt" type="text" width="15"
       autocomplete="off"  autofocus />
-    <input type="submit" name="try" />
   </form>
 </div></div>
 
+<p id="response"> </p>
+<p id="tiles"> </p>
+<p id="message"> </p>
+
 <br />
+<script>
+// Supress normal form submission
+//$("#entry")submit(function(event){
+//   event.preventDefault();
+//   });
 
-{% if session.matches|length is not equalto 0  %}
-<h2>You found </h2>
-<p id="results">
-  {% for match in session.matches %}
-  {{ match }} 
-  {% endfor %}
-</p>
-{% endif %}
+// Each keystroke, ask server whether current word is long enough
+$("#attempt").keyup(function(event){
+   var txt = $("#attempt").val();
+   var keycode = event.which; //key the just went up
+   var letter = String.fromCharCode(keycode); // returning letter that was pressed
+   //console.log(txt);
+   // If letter pressed in anything that isn't a letter, pass the following statement
 
+   $.getJSON( "/_check",{ text: txt},
+	     function(data) 
+	     {
+                rsval = data.result
+                //does_exist = data.result.error
+		if(rsval.error)
+		{
 
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <!-- Mismatch, already found, etc. "flashed" from Python -->
-    {% for message in messages %}
-      <p class="message">{{ message }}</p>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
+			$("#response").html(rsval.error);
+			//$("#attempt").val("");
+//                        $("#matches").html(rsval.matches);
+		}
+                if(rsval.word_exist)
+                {
 
+                        $("#response").html("You Found "+txt+"!");
+                        $("#attempt").val("");
+                }
+                else if(rsval.done)
+                {
+                        window.location.href = ("/success");
+                }
 
+   	     }
+            );
+	});	
+
+</script>
 
  </div> <!-- container -->
 </body> </html>

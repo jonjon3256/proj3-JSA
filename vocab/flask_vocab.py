@@ -74,7 +74,7 @@ def success():
 #######################
 
 
-@app.route("/_check", methods=["POST"])
+@app.route("/_check")
 def check():
     """
     User has submitted the form with a word ('attempt')
@@ -87,35 +87,45 @@ def check():
     app.logger.debug("Entering check")
 
     # The data we need, from form and from cookie
-    text = flask.request.form["attempt"]
+    # text = flask.request.form["attempt"]
     jumble = flask.session["jumble"]
-    matches = flask.session.get("matches", [])  # Default to empty list
-
+    matches = flask.session.get("matches", [])
+    text = flask.request.args.get("text",type=str)  # Default to empty list
+    gameover = False
     # Is it good?
     in_jumble = LetterBag(jumble).contains(text)
     matched = WORDS.has(text)
+    res = {}
+    error = ""
 
     # Respond appropriately
     if matched and in_jumble and not (text in matches):
         # Cool, they found a new word
-        matches.append(text)
+        matches.append(text)	
         flask.session["matches"] = matches
+        
+        res = {"word_exist": True}
     elif text in matches:
-        flask.flash("You already found {}".format(text))
+        res = {"error":("You already found {}".format(text))}
+        
     elif not matched:
-        flask.flash("{} isn't in the list of words".format(text))
+        res = {"error":("{} isn't in the list of words".format(text))}
+        
     elif not in_jumble:
-        flask.flash(
-            '"{}" can\'t be made from the letters {}'.format(text, jumble))
+        res = {"error":('"{}" can\'t be made from the letters {}'.format(text, jumble))}
+       # flask.flash(
+       #     '"{}" can\'t be made from the letters {}'.format(text, jumble))
     else:
         app.logger.debug("This case shouldn't happen!")
-        assert False  # Raises AssertionError
-
+        assert Falses  # Raises AssertionError
+    
     # Choose page:  Solved enough, or keep going?
     if len(matches) >= flask.session["target_count"]:
-       return flask.redirect(flask.url_for("success"))
-    else:
-       return flask.redirect(flask.url_for("keep_going"))
+        gameover = True
+        res = {"done":gameover,
+               "error" : error}
+        
+    return flask.jsonify(result=res)
 
 ###############
 # AJAX request handlers
